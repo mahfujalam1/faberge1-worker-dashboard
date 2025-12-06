@@ -29,7 +29,6 @@ interface CalendarModalProps {
 
 export default function CalendarModal({ open, onOpenChange }: CalendarModalProps) {
     const worker = useGetMeQuery()
-    console.log(worker, "worker")
     const [selectedDate, setSelectedDate] = useState<Date | undefined>()
     const [selectedTimes, setSelectedTimes] = useState<string[]>([])
     const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false)
@@ -37,16 +36,26 @@ export default function CalendarModal({ open, onOpenChange }: CalendarModalProps
     const [isTimeSlotDisabled, setIsTimeSlotDisabled] = useState(false)
     const workerId = worker?.data?.data?._id;
     const dateFormat = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
-    console.log(workerId)
 
     const [updateAvailability, { isLoading }] = useUpdateAvailabilityMutation()
     const [assignOffDay, { isLoading: isAssigningOffDay }] = useAssignOfDayMutation()
     const { data } = useGetAvailableSlotQuery({ workerId, date: dateFormat })
-    console.log(data?.data?.slots, "time slot...")
-    const TIME_SLOTS = data?.data?.slots || [];
+    const availableTimeSlots = data?.data?.slots || [];
 
-    // Filter only available time slots (isAvailable === true)
-    const availableTimeSlots = TIME_SLOTS.filter((slot: any) => slot?.isAvailable === true)
+    // Set default unavailable slots and off day status when data loads
+    useEffect(() => {
+        if (availableTimeSlots.length > 0) {
+            const unavailableSlots = availableTimeSlots
+                .filter((slot: any) => !slot.isAvailable)
+                .map((slot: any) => slot.startTime);
+            setSelectedTimes(unavailableSlots);
+        }
+
+        // Set off day status from API data
+        if (data?.data?.isOffDay !== undefined) {
+            setIsOffDay(data.data.isOffDay);
+        }
+    }, [availableTimeSlots, data?.data?.isOffDay]);
 
     const handleTimeToggle = (time: string) => {
         if (isTimeSlotDisabled) return
@@ -56,16 +65,23 @@ export default function CalendarModal({ open, onOpenChange }: CalendarModalProps
     }
 
     const handleSave = async () => {
-        if (!selectedDate || (selectedTimes.length === 0 && !isOffDay)) return
+        if (!selectedDate) return
 
         try {
-            // Call updateAvailability API with date and unavailableSlots
-            await updateAvailability({
+            // Call updateAvailability API with date and unavailableSlots (even if empty)
+            const data = {
                 date: dateFormat,
                 unavailableSlots: selectedTimes
-            }).unwrap()
+            }
+            console.log(data)
+            const res = await updateAvailability(data)
+            console.log(res)
 
-            toast.success("Availability updated successfully")
+            if (res?.error) {
+                toast.error((res.error as any).data?.message)
+            } else {
+                toast.success(res?.data?.message)
+            }
 
             // Reset after save
             setSelectedDate(undefined)
@@ -90,29 +106,35 @@ export default function CalendarModal({ open, onOpenChange }: CalendarModalProps
         onOpenChange(newOpen)
     }
 
-    const handleAssignOffDay = async (checked: boolean) => {
+    const handleAssignOffDay = async (checked: boolean | string) => {
+        const isChecked = typeof checked === 'boolean' ? checked : checked === 'on';
+        setIsOffDay(isChecked);
+
         if (dateFormat) {
             try {
-                // API hit to assign off day
-               const res=  await assignOffDay({ date: dateFormat }).unwrap()
-               console.log(res)
-                toast.success("Off day assigned successfully")
+                const res = await assignOffDay({ date: dateFormat })
+                console.log(res)
+                if (res?.error) {
+                    toast.error((res.error as any)?.data.message || "Failed to assign off day")
+                } else {
+                    toast.success(res?.data?.message)
+                }
             } catch (error) {
                 toast.error("Failed to assign off day")
             }
         } else {
-            toast.error("Date dose't providing") // Re-enable time slots
+            toast.error("Date doesn't providing")
         }
     }
 
-    const shouldShowTimeSelection = !!selectedDate
+    const shouldShowTimeSelection = !!selectedDate && selectedDate >= new Date(new Date().setHours(0, 0, 0, 0))
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Update Availability</DialogTitle>
-                    <DialogDescription>Select a date and time for availability</DialogDescription>
+                    <DialogTitle>Update Unavailability</DialogTitle>
+                    <DialogDescription>Select a date and time for unavailability</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
@@ -170,7 +192,7 @@ export default function CalendarModal({ open, onOpenChange }: CalendarModalProps
                     {/* Time Selection */}
                     {shouldShowTimeSelection && availableTimeSlots.length > 0 && (
                         <div className="space-y-2 animate-in fade-in-50 duration-200 w-full">
-                            <Label>Select Time</Label>
+                            <Label>Select Time for unavailability</Label>
                             <div className="relative w-full">
                                 <div className={cn(
                                     "relative w-full mt-1 bg-white border border-gray-300 rounded-md shadow-sm",
@@ -212,7 +234,7 @@ export default function CalendarModal({ open, onOpenChange }: CalendarModalProps
                     </Button>
                     <Button
                         onClick={handleSave}
-                        disabled={!selectedDate || (selectedTimes.length === 0 && !isOffDay) || isLoading}
+                        disabled={!selectedDate || isLoading}
                         className="bg-pink-600 hover:bg-pink-700"
                     >
                         {isLoading ? "Saving..." : "Save"}
