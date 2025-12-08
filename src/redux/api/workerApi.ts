@@ -17,16 +17,6 @@ const workerApi = baseApi.injectEndpoints({
             }),
             providesTags: [tagTypes.workers],
         }),
-        // contactUs: build.mutation({
-        //     query: (data) => {
-        //         return {
-        //             url: `/public/create-contact-us`,
-        //             method: "POST",
-        //             body: data,
-        //         }
-        //     },
-        //     invalidatesTags: [tagTypes.siteContent],
-        // }),
     }),
 });
 

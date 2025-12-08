@@ -21,6 +21,17 @@ const bookingApi = baseApi.injectEndpoints({
             providesTags: [tagTypes.bookings],
         }),
 
+        getAllBookingsForCustomer: build.query({
+            query: ({ page, limit, status, filterType }) => {
+                console.log({ page, limit, status, filterType })
+                return {
+                    url: `/booking/customer-book-slot?filterType=${filterType}&status=${status || ''}&page=${page}&limit=${limit}`,
+                    method: "GET",
+                }
+            },
+            providesTags: [tagTypes.bookings],
+        }),
+
         getAllBookSlotsOneDay: build.query({
             query: (date) => {
                 console.log(date, "api date")
@@ -61,4 +72,4 @@ const bookingApi = baseApi.injectEndpoints({
     }),
 });
 
-export const { useGetAllUpcomingBookingForWorkerQuery, usePaymentForSlotMutation ,useGetAllBookingsForWorkerQuery, useBookSlotMutation, useGetAllBookSlotsOneDayQuery, useGetAllStateQuery } = bookingApi;
+export const { useGetAllUpcomingBookingForWorkerQuery, useGetAllBookingsForCustomerQuery ,usePaymentForSlotMutation ,useGetAllBookingsForWorkerQuery, useBookSlotMutation, useGetAllBookSlotsOneDayQuery, useGetAllStateQuery } = bookingApi;

@@ -1,49 +1,40 @@
-import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { BookingCard } from "./BookingCard";
-import { bookings } from "@/constants/booking";
 
-export const BookingTabs = () => {
-  const [tab, setTab] = useState<"All" | "Upcoming" | "Completed">("All");
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-  const filteredBookings = bookings.filter(b =>
-    tab === "All" ? true : b.status === tab
-  );
+export const BookingTabs = ({ setTab, tab, setFilterType }: any) => {
 
+  const handleTabChange = (value: string) => {
+    setTab(value);
+    if (value === "booked") {
+      setFilterType("upcoming");
+    }
+  }
   return (
     <Tabs
       value={tab}
-      onValueChange={(value: string) => setTab(value as "All" | "Upcoming" | "Completed")}
+      onValueChange={(value: string) => handleTabChange(value as "" | "booked" | "completed")}
       className="w-full"
     >
       <TabsList className="flex gap-2">
         <TabsTrigger
-          value="All"
-          className={`${tab === "All" ? "bg-primary text-primary" : "bg-transparent text-black cursor-pointer"}`}
+          value=""
+          className={`${tab === "" ? "bg-primary text-primary" : "bg-transparent text-black cursor-pointer"}`}
         >
           All Bookings
         </TabsTrigger>
         <TabsTrigger
-          value="Upcoming"
-          className={`${tab === "Upcoming" ? "bg-primary text-primary" : "bg-transparent text-black cursor-pointer"}`}
+          value="booked"
+          className={`${tab === "booked" ? "bg-primary text-primary" : "bg-transparent text-black cursor-pointer"}`}
         >
           Upcoming
         </TabsTrigger>
         <TabsTrigger
-          value="Completed"
-          className={`${tab === "Completed" ? "bg-primary text-primary" : "bg-transparent text-black cursor-pointer"}`}
+          value="completed"
+          className={`${tab === "completed" ? "bg-primary text-primary" : "bg-transparent text-black cursor-pointer"}`}
         >
           Completed
         </TabsTrigger>
       </TabsList>
-
-      <TabsContent value={tab}>
-        {filteredBookings.length > 0 ? (
-          filteredBookings.map(b => <BookingCard key={b.id} booking={b} />)
-        ) : (
-          <p className="text-gray-500 text-center">No bookings found.</p>
-        )}
-      </TabsContent>
     </Tabs>
   );
 };
