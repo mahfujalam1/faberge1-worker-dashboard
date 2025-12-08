@@ -4,8 +4,8 @@ import { baseApi } from "./baseApi";
 const calendarApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
         getCalenderSchedule: build.query({
-            query: ({ year, month }) => ({
-                url: `/booking/worker-monthly-calendar?year=${year}&month=${month}`,
+            query: ({workerId, year, month }) => ({
+                url: `/booking/worker-monthly-calendar/${workerId}?year=${year}&month=${month}`,
                 method: "GET",
             }),
             providesTags: [tagTypes.bookings],

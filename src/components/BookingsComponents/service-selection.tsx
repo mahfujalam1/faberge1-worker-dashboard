@@ -1,167 +1,133 @@
 "use client"
 
-import { ExtraService, Service, ServiceSelectionTableProps } from "@/types/booking/appointment"
+import { useGetSingleworkerQuery } from "@/redux/api/workerApi"
 
 export default function ServiceSelectionTable({
     slots,
+    services,
     selectedSlots,
     onSlotChange,
     onAddOnToggle,
-}: ServiceSelectionTableProps) {
-    const isServiceSelected = (time: string, service: Service) => {
-        return selectedSlots.some((slot) => slot.time === time && slot.service.id === service.id)
+    workerId,
+}: any) {
+    const { data } = useGetSingleworkerQuery(workerId)
+    const workerServices = data?.data?.services || [];
+    console.log(workerServices)
+    const isServiceSelected = (time: string, service: any) => {
+        return selectedSlots?.some((slot: any) => slot.time === time && slot.service._id === service._id)
     }
 
-    const isAddOnSelected = (time: string, service: Service, addOn: ExtraService) => {
-        const slot = selectedSlots.find((s) => s.time === time && s.service.id === service.id)
-        return slot?.addOns.some((a) => a.id === addOn.id) || false
+    const isAddOnSelected = (time: string, service: any, addOn: any) => {
+        // Find the slot that matches both time AND the specific service
+        const slot = selectedSlots.find((s: any) => s.time === time && s.service._id === service._id)
+        // Check if this specific addon is in that slot's addOns array
+        return slot?.addOns?.some((a: any) => a._id === addOn._id) || false
+    }
+
+    // Filter only available slots and exclude slots with :30 minutes
+    const availableSlots = slots.filter((slot: any) => {
+        const hasThirtyMinutes = slot.startTime.includes(':30')
+        return slot.isAvailable && !slot.isBooked && !slot.isBlocked && !hasThirtyMinutes
+    })
+
+    if (availableSlots.length === 0) {
+        return (
+            <div className="border rounded-lg p-8 text-center">
+                <p className="text-gray-500">No available time slots for this date</p>
+            </div>
+        )
     }
 
     return (
         <div className="border rounded-lg flex-nowrap overflow-x-auto">
-            {/* Horizontal scroll container for smaller screens */}
-            <div className="w-full  ">
+            <div className="w-full">
                 <table className="w-full border-collapse">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="text-left py-3 px-4 font-medium text-gray-700 whitespace-nowrap sticky left-0 bg-gray-50 z-10 border-r">
                                 Time
                             </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-700 whitespace-nowrap min-w-[150px]">
-                                Service
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-700 whitespace-nowrap min-w-[120px]">
-                                Add-Ons
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-700 whitespace-nowrap min-w-[150px]">
-                                Service
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-700 whitespace-nowrap min-w-[120px]">
-                                Add-Ons
-                            </th>
+                            {services.slice(0, 2).map((service: any) => (
+                                <>
+                                    <th key={`service-${service?._id}`} className="text-left py-3 px-4 font-medium text-gray-700 whitespace-nowrap min-w-[150px]">
+                                        Service
+                                    </th>
+                                    <th key={`addon-${service?._id}`} className="text-left py-3 px-4 font-medium text-gray-700 whitespace-nowrap min-w-[120px]">
+                                        Add-Ons
+                                    </th>
+                                </>
+                            ))}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {slots.map((slot, index) => (
-                            <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                {/* Time column - sticky */}
-                                <td className="py-3 px-4 align-top whitespace-nowrap sticky left-0 bg-white border-r z-5">
-                                    <span className="text-sm font-medium text-gray-900">{slot.time}</span>
-                                </td>
+                        {availableSlots?.map((slot: any) => {
+                            const timeSlot = `${slot.startTime} - ${slot.endTime}`
+                            return (
+                                <tr key={slot._id} className="hover:bg-gray-50 transition-colors">
+                                    {/* Time column - sticky */}
+                                    <td className="py-3 px-4 align-top whitespace-nowrap sticky left-0 bg-white border-r z-5">
+                                        <span className="text-sm font-medium text-gray-900">{timeSlot}</span>
+                                    </td>
 
-                                {/* First Service */}
-                                <td className="py-3 px-4 align-top min-w-[150px]">
-                                    {slot.services[0] && (
-                                        <label className="flex items-start gap-2  cursor-pointer group">
-                                            <input
-                                                type="checkbox"
-                                                checked={isServiceSelected(slot.time, slot.services[0])}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        onSlotChange(
-                                                            {
-                                                                time: slot.time,
-                                                                service: slot.services[0],
-                                                                addOns: [],
-                                                            },
-                                                            slot.time,
-                                                            slot.services[0],
-                                                        )
-                                                    } else {
-                                                        onSlotChange(null, slot.time, slot.services[0])
-                                                    }
-                                                }}
-                                                className="w-4 h-4 mt-0.5 flex-shrink-0"
-                                            />
-                                            <span className="text-sm whitespace-nowrap group-hover:text-blue-600 transition-colors">
-                                                {slot.services[0].name}<br />
-                                                <span className="text-green-600 font-medium">${slot.services[0].price}</span>
-                                            </span>
-                                        </label>
-                                    )}
-                                </td>
-
-                                {/* First Service Add-Ons */}
-                                <td className="py-3 px-4 align-top min-w-[120px]">
-                                    {slot.services[0] && (
-                                        <div className="space-y-2">
-                                            {slot.extraServices.map((addon) => (
-                                                <label key={addon.id} className="flex items-start gap-2 cursor-pointer group">
+                                    {/* Render services (max 2) */}
+                                    {services.slice(0, 2).map((service: any) => (
+                                        <>
+                                            {/* Service */}
+                                            <td key={`service-${service?._id}`} className="py-3 px-4 align-top min-w-[150px]">
+                                                <label className="flex items-start gap-2 cursor-pointer group">
                                                     <input
                                                         type="checkbox"
-                                                        checked={isAddOnSelected(slot.time, slot.services[0], addon)}
-                                                        onChange={() => onAddOnToggle(slot.time, slot.services[0], addon)}
-                                                        disabled={!isServiceSelected(slot.time, slot.services[0])}
+                                                        checked={isServiceSelected(timeSlot, service)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                onSlotChange(
+                                                                    {
+                                                                        time: timeSlot,
+                                                                        service: service,
+                                                                        addOns: [],
+                                                                    },
+                                                                    timeSlot,
+                                                                    service,
+                                                                )
+                                                            } else {
+                                                                onSlotChange(null, timeSlot, service)
+                                                            }
+                                                        }}
                                                         className="w-4 h-4 mt-0.5 flex-shrink-0"
                                                     />
-                                                    <span className={`text-xs whitespace-nowrap group-hover:text-blue-600 transition-colors ${!isServiceSelected(slot.time, slot.services[0]) ? 'text-gray-400' : ''
-                                                        }`}>
-                                                        {addon.name}<br />
-                                                        <span className="text-green-600">+${addon.price}</span>
+                                                    <span className="text-sm whitespace-nowrap group-hover:text-blue-600 transition-colors">
+                                                        {service?.service?.serviceName}<br />
+                                                        <span className="text-green-600 font-medium">${service?.service?.price}</span>
                                                     </span>
                                                 </label>
-                                            ))}
-                                        </div>
-                                    )}
-                                </td>
+                                            </td>
 
-                                {/* Second Service */}
-                                <td className="py-3 px-4 align-top min-w-[150px]">
-                                    {slot.services[1] && (
-                                        <label className="flex items-start gap-2 cursor-pointer group">
-                                            <input
-                                                type="checkbox"
-                                                checked={isServiceSelected(slot.time, slot.services[1])}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        onSlotChange(
-                                                            {
-                                                                time: slot.time,
-                                                                service: slot.services[1],
-                                                                addOns: [],
-                                                            },
-                                                            slot.time,
-                                                            slot.services[1],
-                                                        )
-                                                    } else {
-                                                        onSlotChange(null, slot.time, slot.services[1])
-                                                    }
-                                                }}
-                                                className="w-4 h-4 mt-0.5 flex-shrink-0"
-                                            />
-                                            <span className="text-sm whitespace-nowrap text-nowrap group-hover:text-blue-600 transition-colors">
-                                                {slot.services[1].name}<br />
-                                                <span className="text-green-600 font-medium">${slot.services[1].price}</span>
-                                            </span>
-                                        </label>
-                                    )}
-                                </td>
-
-                                {/* Second Service Add-Ons */}
-                                <td className="py-3 px-4 align-top min-w-[120px]">
-                                    {slot.services[1] && (
-                                        <div className="space-y-2">
-                                            {slot.extraServices.map((addon) => (
-                                                <label key={addon.id} className="flex items-start gap-2 cursor-pointer group">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isAddOnSelected(slot.time, slot.services[1], addon)}
-                                                        onChange={() => onAddOnToggle(slot.time, slot.services[1], addon)}
-                                                        disabled={!isServiceSelected(slot.time, slot.services[1])}
-                                                        className="w-4 h-4 mt-0.5 flex-shrink-0"
-                                                    />
-                                                    <span className={`text-xs whitespace-nowrap group-hover:text-blue-600 transition-colors ${!isServiceSelected(slot.time, slot.services[1]) ? 'text-gray-400' : ''
-                                                        }`}>
-                                                        {addon.name}<br />
-                                                        <span className="text-green-600">+${addon.price}</span>
-                                                    </span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
+                                            {/* Service Add-Ons */}
+                                            <td key={`addon-${service?._id}`} className="py-3 px-4 align-top min-w-[120px]">
+                                                <div className="space-y-2">
+                                                    {service?.service?.subcategory?.map((addon: any) => (
+                                                        <label key={addon?._id} className="flex items-start gap-2 cursor-pointer group">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isAddOnSelected(timeSlot, service, addon)}
+                                                                onChange={() => onAddOnToggle(timeSlot, service, addon)}
+                                                                disabled={!isServiceSelected(timeSlot, service)}
+                                                                className="w-4 h-4 mt-0.5 flex-shrink-0"
+                                                            />
+                                                            <span className={`text-xs whitespace-nowrap group-hover:text-blue-600 transition-colors ${!isServiceSelected(timeSlot, service) ? 'text-gray-400' : ''
+                                                                }`}>
+                                                                {addon?.subcategoryName}<br />
+                                                                <span className="text-green-600">+${addon?.subcategoryPrice}</span>
+                                                            </span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        </>
+                                    ))}
+                                </tr>
+                            )
+                        })}
                     </tbody>
                 </table>
             </div>

@@ -7,6 +7,7 @@ import CalendarModal from "./CalendarModal"
 import { Button } from "@/components/ui/button"
 import UpdateScheduleModal from "./UpdateScheduleModal"
 import { useGetCalenderScheduleQuery } from "@/redux/api/calenderApi"
+import { useGetMeQuery } from "@/redux/api/baseApi"
 
 
 export default function CalendarScheduler() {
@@ -15,8 +16,8 @@ export default function CalendarScheduler() {
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
     const [open, setOpen] = useState(false)
     const [updateModalOpen, setUpdateModalOpen] = useState(false)
-    
-    const { data } = useGetCalenderScheduleQuery({ year: selectedYear, month: selectedMonth });
+    const workerId = useGetMeQuery(undefined)?.data?.data?._id;
+    const { data } = useGetCalenderScheduleQuery({ workerId, year: selectedYear, month: selectedMonth });
     const calenderData = data?.data || [];
     console.log(calenderData)
 

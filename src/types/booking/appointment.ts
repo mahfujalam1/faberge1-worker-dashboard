@@ -1,5 +1,5 @@
 export type Service = {
-    id: string
+    _id: string
     name: string
     price: number
     code: string
@@ -30,6 +30,7 @@ export type TeamMember = {
 }
 
 export type BookingItem = {
+    _id?:string
     date: string
     time: string
     service: Service

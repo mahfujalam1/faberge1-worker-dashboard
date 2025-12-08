@@ -4,8 +4,11 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { IMAGES } from "@/constants/image.index";
 import { usePathname } from "next/navigation";
+import { useGetAboutUsQuery } from "@/redux/api/publicApi";
 
 export default function About() {
+    const { data } = useGetAboutUsQuery(undefined);
+    const aboutUs = data?.aboutUs || "";
     const path = usePathname();
 
     // ✅ Apply gradient background only on "/about" route
@@ -40,13 +43,9 @@ export default function About() {
                             </h2>
                         </div>
 
-                        <p className="text-gray-700 leading-relaxed text-sm">
-                            In Home Beauty Services is passionate about providing excellent customer service to our clients.
-                            We strive to make certain you feel secure, comfortable and completely satisfied with our service.
-                            Our team of licensed and skilled nail technicians are committed to their work and strive to perform
-                            at their highest level. We pride ourselves on punctuality, hospitality and professionalism.
-                            We look forward to cultivating and maintaining long-lasting and mutually rewarding relationships
-                            with all of our clients.
+                        <p className="text-gray-700 leading-relaxed text-sm" dangerouslySetInnerHTML={{
+                            __html: aboutUs || "",
+                        }}>
                         </p>
 
                         <Button

@@ -6,9 +6,11 @@ import { BookingCartProps } from "@/types/booking/appointment";
 interface Props extends BookingCartProps {
     onRemove?: (index: number) => void;
     onClear?: () => void;
+    isLoading: boolean
 }
 
 export default function BookingCart({
+    isLoading,
     bookings,
     memberName,
     workerId,
@@ -16,6 +18,7 @@ export default function BookingCart({
     onRemove,
     onClear,
 }: Props) {
+    console.log(bookings)
     if (!bookings || bookings.length === 0)
         return (
             <div className="bg-white rounded-3xl shadow-2xl p-10 text-center text-gray-600 font-medium">
@@ -25,10 +28,10 @@ export default function BookingCart({
 
     // 🔹 Total calculation
     const calculateTotal = () => {
-        return bookings.reduce((total, booking) => {
-            const servicePrice = booking.service.price;
+        return bookings.reduce((total, booking: any) => {
+            const servicePrice = booking.service?.service.price;
             const addOnsPrice = booking.addOns.reduce(
-                (sum, addon) => sum + addon.price,
+                (sum: number, addon: any) => sum + addon.subcategoryPrice,
                 0
             );
             return total + servicePrice + addOnsPrice;
@@ -51,10 +54,10 @@ export default function BookingCart({
                         </tr>
                     </thead>
                     <tbody>
-                        {bookings.map((booking, index) => {
+                        {bookings.map((booking: any, index) => {
                             const itemTotal =
-                                booking.service.price +
-                                booking.addOns.reduce((sum, addon) => sum + addon.price, 0);
+                                booking.service?.service.price +
+                                booking.addOns.reduce((sum: number, addon: any) => sum + addon.subcategoryPrice, 0);
 
                             return (
                                 <tr
@@ -65,10 +68,10 @@ export default function BookingCart({
                                     <td className="py-3 px-2">{booking.date}</td>
                                     <td className="py-3 px-2">{booking.time}</td>
                                     <td className="py-3 px-2">
-                                        {booking.service.code} ${booking.service.price}
+                                        {booking.service?.service?.serviceName} ${booking.service?.service?.price}
                                     </td>
                                     <td className="py-3 px-2">
-                                        {booking.addOns.map((addon) => `${addon.code} $${addon.price}`).join(", ") ||
+                                        {booking.addOns?.map((addon: any) => `${addon.subcategoryName} $${addon.subcategoryPrice}`).join(", ") ||
                                             "-"}
                                     </td>
                                     <td className="py-3 px-2 font-medium">${itemTotal}</td>
@@ -101,9 +104,20 @@ export default function BookingCart({
             <div className="mt-8 flex justify-center gap-6">
                 <button
                     onClick={onCheckout}
-                    className="bg-primary cursor-pointer text-white px-12 py-3 rounded-lg font-medium hover:bg-pink-700 transition-colors"
+                    disabled={isLoading}
+                    className="bg-primary cursor-pointer text-white px-12 py-3 rounded-lg font-medium hover:bg-pink-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                    Check Out
+                    {isLoading ? (
+                        <>
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                        </>
+                    ) : (
+                        "Check Out"
+                    )}
                 </button>
 
                 <button

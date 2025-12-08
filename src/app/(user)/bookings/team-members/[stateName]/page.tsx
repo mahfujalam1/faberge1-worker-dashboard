@@ -6,25 +6,21 @@ import Image from "next/image"
 import { MapPin } from "lucide-react"
 import teammembersData from "@/constants/team-members.json"
 import { IMAGES } from "@/constants/image.index"
+import { useGetAllWorkersQuery } from "@/redux/api/workerApi"
 // import { DynamicBanner } from "@/components/shared/DynamicBanner"
 
-export default function TeamMembersPage({
-    params,
-}: {
-    params: Promise<{ stateName: string }>
-}) {
+export default function TeamMembersPage() {
     // ✅ unwrap params Promise the new Next.js v15 way
-    const { stateName } = React.use(params)
+
+    const { data } = useGetAllWorkersQuery(undefined)
+    const teamMembers = data?.data || []
+    console.log(teamMembers)
     const router = useRouter()
 
     const handleMemberClick = (workerId: string) => {
         router.push(`/bookings/book-appointment/${workerId}`)
     }
 
-    // ✅ Filter team members by state
-    const filteredMembers = teammembersData.members.filter(
-        (member) => member.state.toLowerCase() === stateName.toLowerCase()
-    )
 
     return (
         <div>
@@ -39,17 +35,17 @@ export default function TeamMembersPage({
 
                         {/* Team Members Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-9 gap-4 text-center">
-                            {(filteredMembers.length > 0 ? filteredMembers : teammembersData.members).map(
-                                (member) => (
+                            {teamMembers.length > 0 && teamMembers?.map(
+                                (member: any) => (
                                     <button
-                                        key={member.workerId}
-                                        onClick={() => handleMemberClick(member.workerId)}
+                                        key={member._id}
+                                        onClick={() => handleMemberClick(member._id)}
                                         className="bg-white rounded-lg p-4 cursor-pointer hover:shadow-lg duration-300 transition-all hover:scale-105 text-left"
                                     >
                                         {/* Member Image */}
                                         <div className="relative w-full aspect-square mb-3 rounded-lg overflow-hidden bg-gray-200">
                                             <Image
-                                                src={IMAGES.workerProfile.src}
+                                                src={member?.uploadPhoto === "http://10.10.20.16:5137undefined" ? IMAGES?.workerProfile.src : member?.uploadPhoto}
                                                 alt={`${member.firstName} ${member.lastName}`}
                                                 fill
                                                 className="object-cover"
@@ -63,14 +59,14 @@ export default function TeamMembersPage({
 
                                         <div className=" text-center">
                                             <div className="flex items-center justify-center gap-1 text-xs text-gray-600 mb-1">
-                                                
+
                                                 <span>
                                                     {member.city}, {member.state}
                                                 </span>
                                             </div>
 
-                                            
-                                                <h1 className=" text-xs">Nail Tech</h1>
+
+                                            <h1 className=" text-xs">Nail Tech</h1>
                                             <div className="flex items-center justify-center gap-1 text-xs text-gray-700">
                                                 <span>ID#:</span>
                                                 <span>{member.workerId}</span>

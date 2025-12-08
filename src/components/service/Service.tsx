@@ -4,13 +4,18 @@ import Image from "next/image";
 import { IMAGES } from "@/constants/image.index";
 import SectionHeader from "../ui/SectionHeader";
 import { usePathname } from "next/navigation";
+import { useGetAllDynamicBannerQuery } from "@/redux/api/publicApi";
 
 export default function ServicesSection() {
     const path = usePathname();
+    const { data } = useGetAllDynamicBannerQuery(undefined);
+    const manicureBannerImage = data?.data.find((banner: any) => banner.title === 'manicure');
+    const pedicureBannerImage = data?.data.find((banner: any) => banner.title === 'pedicure');
+    
 
     const manicureData = {
         title: "Manicure",
-        image: IMAGES.serviceCardImage1.src,
+        image: manicureBannerImage?.image || IMAGES.serviceCardImage1.src,
         services: [
             {
                 title: "Manicure",
@@ -27,7 +32,7 @@ export default function ServicesSection() {
 
     const pedicureData = {
         title: "Pedicure",
-        image: IMAGES.serviceCardImage2.src,
+        image: pedicureBannerImage?.image || IMAGES.serviceCardImage2.src,
         services: [
             {
                 title: "Pedicure",

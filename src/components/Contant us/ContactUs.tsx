@@ -1,16 +1,57 @@
 "use client";
 
 import { IMAGES } from "@/constants/image.index";
+import { useContactUsMutation } from "@/redux/api/publicApi";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import type React from "react";
+import { toast } from "sonner";
 
 export default function ContactSection() {
     const path = usePathname();
+    const [addContactUs] = useContactUsMutation();
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // State to handle form inputs
+    const [formData, setFormData] = useState({
+        firstName: "",
+        email: "",
+        subject: "",
+        message: ""
+    });
+
+    // Handle form input changes
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    // Handle form submission
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log("Form submitted");
+
+        // Format data into the desired object structure
+        const dataToSend = {
+            firstName: formData.firstName,
+            email: formData.email,
+            message: formData.message,
+            subject: formData.subject,
+        };
+
+        // Sending the formatted data
+        try {
+            const res = await addContactUs(dataToSend);
+            if (res?.data) {
+                toast.success(res?.data?.message || "Form submitted successfully");
+            } else if (res?.error) {
+                toast.error((res?.error as any)?.data?.message || "Failed to submit the form");
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+        }
     };
 
     // ✅ Gradient background only on /contact route
@@ -41,35 +82,47 @@ export default function ContactSection() {
                         </h2>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* First Name and Last Name */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <input
-                                    type="text"
-                                    placeholder="First Name"
-                                    required
-                                    className="w-full px-4 py-3 rounded-md border border-gray-800 focus:border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Last Name"
-                                    required
-                                    className="w-full px-4 py-3 rounded-md border border-gray-800 focus:border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
-                                />
-                            </div>
+                            {/* First Name */}
+                            <input
+                                type="text"
+                                name="firstName"
+                                placeholder="Full Name"
+                                required
+                                value={formData.firstName}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 rounded-md border border-gray-800 focus:border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
+                            />
+
+                            {/* Subject */}
+                            <input
+                                type="text"
+                                name="subject"
+                                placeholder="Subject"
+                                required
+                                value={formData.subject}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 rounded-md border border-gray-800 focus:border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
+                            />
 
                             {/* Email */}
                             <input
                                 type="email"
+                                name="email"
                                 placeholder="Email Address"
                                 required
+                                value={formData.email}
+                                onChange={handleInputChange}
                                 className="w-full px-4 py-3 rounded-md border border-gray-800 focus:border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
                             />
 
                             {/* Message */}
                             <textarea
+                                name="message"
                                 placeholder="Message"
                                 required
                                 rows={6}
+                                value={formData.message}
+                                onChange={handleInputChange}
                                 className="w-full px-4 py-3 rounded-md border border-gray-800 focus:border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all resize-none"
                             />
 
